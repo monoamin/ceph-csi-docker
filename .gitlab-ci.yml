@@ -1,0 +1,42 @@
+image: git.think-modular.com:5050/sys/infrastructure/ci/build_container:latest
+
+stages:
+  - build-image
+
+variables:
+  GOLANG_VERSION: 1.24.1
+
+build:
+  stage: build-image
+  interruptible: true
+  script:
+    # Dependencies
+    - apt update && apt install -y cephadm
+    - cephadm add-repo --release squid
+    - apt update && apt install -y librados-dev librbd-dev libcephfs-dev 
+    - curl -LO https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz
+    - rm -rf /usr/local/go
+    - tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz
+    - export PATH=$PATH:/usr/local/go/bin
+    - go version
+
+    # Clone the repo
+    - git clone https://github.com/ceph/ceph-csi.git
+    - cd ceph-csi
+
+    # Build image and extract rootfs container
+    - GOARCH=amd64 make image-cephcsi
+    - cd ..
+    - chmod +x plugin/rootfs/entrypoint.sh
+    - CONTAINER_ID=$(docker create quay.io/cephcsi/cephcsi:canary)
+    # Copy the full filesystem from the container to your plugin rootfs directory
+    - docker cp "${CONTAINER_ID}:/." plugin/rootfs/
+    - docker rm "${CONTAINER_ID}" 
+    # Docker plugin creation
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+    - docker --debug plugin ls
+    - ls ./plugin/rootfs
+    - docker --debug plugin create $CI_REGISTRY_IMAGE/cephcsi:latest ./plugin
+    - docker --debug plugin push $CI_REGISTRY_IMAGE/cephcsi:latest
+    - docker --debug plugin rm $CI_REGISTRY_IMAGE/cephcsi:latest    
+
