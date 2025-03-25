@@ -4,13 +4,23 @@
     "description": "Ceph RBD CSI Plugin for Docker",
     "documentation": "https://github.com/ceph/ceph-csi",
     "interface": {
-      "types": ["docker.csicontroller/1.0", "docker.csinode/1.0"],
+      "types": ["docker.csicontroller/1.0"],
       "socket": "csi.sock"
     },
     "entrypoint": [
       "/entrypoint.sh"
     ],
     "env": [
+      {
+        "name": "DEBUG_ENTRYPOINT",
+        "value": "true",
+        "settable": ["value"]
+      },
+      {
+        "name": "CEPHCSI_VERBOSITY",
+        "value": "6",
+        "settable": ["value"]
+      },
       {
         "name": "CSI_ENDPOINT",
         "value": "/run/docker/plugins/csi.sock",

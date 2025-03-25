@@ -18,13 +18,16 @@ cd ceph-csi
 # Build image and extract rootfs container
 make image-cephcsi
 cd ..
-chmod +x plugin/rootfs/entrypoint.sh
+chmod +x plugin-node/rootfs/entrypoint.sh
+chmod +x plugin-controller/rootfs/entrypoint.sh
 container_id=$(docker create quay.io/cephcsi/cephcsi:canary)
 
 # Copy the full filesystem from the container to your plugin rootfs directory
-docker cp "${container_id}:/." plugin/rootfs/
+docker cp "${container_id}:/." plugin-node/rootfs/
+docker cp "${container_id}:/." plugin-controller/rootfs/
 docker rm "${container_id}" 
 
 # Build the Plugin
-docker --debug plugin create cephcsi-docker:latest ./plugin
+docker --debug plugin create cephcsi-node:latest ./plugin-node
+docker --debug plugin create cephcsi-controller:latest ./plugin-controller
 docker --debug plugin ls
