@@ -4,8 +4,8 @@
     "description": "Ceph RBD CSI Plugin for Docker",
     "documentation": "https://github.com/ceph/ceph-csi",
     "interface": {
-      "types": ["docker.csicontroller/1.0"],
-      "socket": "csi.sock"
+      "types": ["docker.csicontroller/1.0","docker.csinode/1.0"],
+      "socket": "cephcsi.sock"
     },
     "entrypoint": [
       "/entrypoint.sh"
@@ -23,7 +23,7 @@
       },
       {
         "name": "CSI_ENDPOINT",
-        "value": "/run/docker/plugins/csi.sock",
+        "value": "/run/docker/plugins/cephcsi.sock",
         "settable": ["value"]
       },
       {
@@ -69,6 +69,11 @@
       {
         "name": "METRICS_PATH",
         "value": "/metrics",
+        "settable": ["value"]
+      },
+      {
+        "name": "STAGING_PATH",
+        "value": "/data/staged",
         "settable": ["value"]
       },
       {
@@ -130,18 +135,16 @@
     "linux": {
       "capabilities": ["CAP_SYS_ADMIN"],
       "allowAllDevices": true,
-      "devices": [],
-      "mounts": [
+      "devices": []
+    },
+    "network": {
+        "type": "host"
+    },
+    "mounts": [
         {
           "type": "bind",
           "source": "/dev",
           "destination": "/dev",
-          "options": ["rbind"]
-        },
-        {
-          "type": "bind",
-          "source": "/var/lib/kubelet",
-          "destination": "/var/lib/kubelet",
           "options": ["rbind"]
         },
         {
@@ -155,9 +158,26 @@
           "source": "/lib/modules",
           "destination": "/lib/modules",
           "options": ["rbind", "ro"]
+        },
+        {
+          "type": "bind",
+          "source": "/etc/ceph-csi-config/config.json",
+          "Destination": "/etc/ceph-csi-config/config.json",
+          "options": ["rbind"]
+        },
+        {
+          "Type": "tmpfs",
+          "Source": "",
+          "Destination": "/tmp/csi/keys",
+          "Options": ["rw", "nosuid", "nodev"]
+        },
+        {
+          "Type": "tmpfs",
+          "Source": "",
+          "Destination": "/var/lib/kubelet",
+          "Options": ["rw", "nosuid", "nodev"]
         }
-      ]
-    },
+    ],
     "propagatedMount": "/data/published"
   }
   

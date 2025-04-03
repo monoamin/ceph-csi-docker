@@ -11,6 +11,7 @@ fi
 # Default values if not overridden by environment variables
 CONTROLLER_SERVER="${CONTROLLER_SERVER:-true}"
 NODE_SERVER="${NODE_SERVER:-false}"
+STAGING_PATH="${STAGING_PATH:-}"
 NODE_ID="${NODE_ID:-default-node-id}"
 CSI_ADDONS_ENDPOINT="${CSI_ADDONS_ENDPOINT:-unix://tmp/csi-addons.sock}"
 DRIVER_NAME="${DRIVER_NAME:-rbd.csi.ceph.com}"
@@ -66,12 +67,13 @@ echo "Starting cephcsi with endpoint: unix:/${CSI_ENDPOINT}"
 #eval exec $CMD
 
 exec /usr/local/bin/cephcsi \
-    --endpoint=unix://run/docker/plugins/csi.sock \
-    --controllerserver=true \
-    --nodeserver=false \
+    --endpoint="unix:/${CSI_ENDPOINT}" \
     --nodeid="${NODE_ID}" \
-    --drivername=rbd.csi.ceph.com \
-    --type=rbd \
+    --stagingpath="${STAGING_PATH}" \
+    --nodeserver=true \
+    --controllerserver=true \
+    --drivername="${DRIVER_NAME}" \
+    --type="${TYPE}" \
     --clustername=ceph \
     --metricsport=8080 \
     --v="${CEPHCSI_VERBOSITY}"

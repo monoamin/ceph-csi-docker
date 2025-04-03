@@ -5,6 +5,8 @@ stages:
 
 variables:
   GOLANG_VERSION: 1.24.1
+  UPSTREAM_REPO: "https://github.com/monoamin/ceph-csi.git"
+  UPSTREAM_BRANCH: "grpc-aio-k8sless"
 
 build:
   stage: build-image
@@ -21,25 +23,32 @@ build:
     - go version
 
     # Clone the repo
-    - git clone https://github.com/ceph/ceph-csi.git
+    #- git clone https://github.com/ceph/ceph-csi.git
+    - git clone ${UPSTREAM_REPO}
     - cd ceph-csi
+    - git checkout ${UPSTREAM_BRANCH}
 
     # Build image and extract rootfs container
     - GOARCH=amd64 make image-cephcsi
     - cd ..
-    - chmod +x plugin-controller/rootfs/entrypoint.sh
-    - chmod +x plugin-node/rootfs/entrypoint.sh
+    #- chmod +x plugin-controller/rootfs/entrypoint.sh
+    #- chmod +x plugin-node/rootfs/entrypoint.sh
+    - chmod +x plugin-aio/rootfs/entrypoint.sh
     - CONTAINER_ID=$(docker create quay.io/cephcsi/cephcsi:canary)
     # Copy the full filesystem from the container to your plugin rootfs directory
-    - docker cp "${CONTAINER_ID}:/." plugin-controller/rootfs/
-    - docker cp "${CONTAINER_ID}:/." plugin-node/rootfs/
+    #- docker cp "${CONTAINER_ID}:/." plugin-controller/rootfs/
+    #- docker cp "${CONTAINER_ID}:/." plugin-node/rootfs/
+    - docker cp "${CONTAINER_ID}:/." plugin-aio/rootfs/
     - docker rm "${CONTAINER_ID}" 
     # Docker plugin creation
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
     - docker --debug plugin ls
-    - docker --debug plugin create  $CI_REGISTRY_IMAGE/cephcsi-controller:latest ./plugin-controller
-    - docker --debug plugin push    $CI_REGISTRY_IMAGE/cephcsi-controller:latest
-    - docker --debug plugin rm      $CI_REGISTRY_IMAGE/cephcsi-controller:latest    
-    - docker --debug plugin create  $CI_REGISTRY_IMAGE/cephcsi-node:latest ./plugin-node
-    - docker --debug plugin push    $CI_REGISTRY_IMAGE/cephcsi-node:latest
-    - docker --debug plugin rm      $CI_REGISTRY_IMAGE/cephcsi-node:latest  
+    #- docker --debug plugin create  $CI_REGISTRY_IMAGE/cephcsi-controller:latest ./plugin-controller
+    #- docker --debug plugin push    $CI_REGISTRY_IMAGE/cephcsi-controller:latest
+    #- docker --debug plugin rm      $CI_REGISTRY_IMAGE/cephcsi-controller:latest    
+    #- docker --debug plugin create  $CI_REGISTRY_IMAGE/cephcsi-node:latest ./plugin-node
+    #- docker --debug plugin push    $CI_REGISTRY_IMAGE/cephcsi-node:latest
+    #- docker --debug plugin rm      $CI_REGISTRY_IMAGE/cephcsi-node:latest  
+    - docker --debug plugin create  $CI_REGISTRY_IMAGE/cephcsi-aio:latest ./plugin-aio
+    - docker --debug plugin push    $CI_REGISTRY_IMAGE/cephcsi-aio:latest
+    - docker --debug plugin rm      $CI_REGISTRY_IMAGE/cephcsi-aio:latest  
